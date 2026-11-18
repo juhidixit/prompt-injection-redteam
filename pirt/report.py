@@ -94,6 +94,7 @@ def _chart_templates(summary: dict, path: Path) -> None:
 
 def build_report(raw_dir: str | Path, out_dir: str | Path) -> str:
     raw_dir, out_dir = Path(raw_dir), Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
     rows = load(sorted(raw_dir.glob("*.jsonl"))) if any(raw_dir.glob("*.jsonl")) else []
     rows = [r for r in rows if "kind" in r]
     summary = summarize(rows)
