@@ -1,0 +1,27 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - name: Fetch detector training data
+        run: python scripts/fetch_data.py
+      - run: pytest -q
+      - name: End-to-end smoke run (scripted agent, all defenses)
+        run: python -m pirt run --model scripted --defenses none,delimit,datamark,sandwich,classifier,self_check,tool_guard,layered --out /tmp/smoke.jsonl
+      - name: Report builds from committed raw results
+        run: python -m pirt report --out /tmp/report && head -30 /tmp/report/RESULTS.md

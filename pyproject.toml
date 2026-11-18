@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pirt"
+version = "0.1.0"
+description = "Prompt-injection red-team lab: attack corpus, automated red-teaming and measured defenses for tool-using LLM agents"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Juhi Dixit" }]
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "scikit-learn>=1.3"]
+
+[project.optional-dependencies]
+llm = ["llama-cpp-python>=0.3"]
+report = ["matplotlib>=3.7"]
+dev = ["pytest>=7", "ruff>=0.4", "matplotlib>=3.7"]
+
+[tool.setuptools]
+packages = ["pirt"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E731"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"pirt/tasks.py" = ["E501"]
+"pirt/benign.py" = ["E501"]
