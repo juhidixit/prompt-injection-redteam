@@ -14,7 +14,46 @@ the raw logs in [`results/raw/`](results/raw).
 > fake inbox, fake files and a fake bank account; no tool touches the real world. The attack techniques are
 > the published ones (see [`pirt/attacks.py`](pirt/attacks.py)), and the point is to measure which mitigations hold up.
 
-<!-- RESULTS -->
+## Headline results
+
+Three open-weight agents (Qwen2.5-3B, Qwen2.5-7B, Llama 3.2 3B; Q4_K_M, temperature 0) ran 16 benign tasks and
+192 attacked episodes per defense, 2,944 episodes in all. Full tables: [`results/RESULTS.md`](results/RESULTS.md).
+
+| Agent | Defense | Attack success | Benign utility | Utility under attack |
+|---|---|---|---|---|
+| Qwen2.5-7B | none | 48.4% [41-55] | 93.8% | 64.1% |
+| Qwen2.5-7B | layered | **0.5% [0-3]** | 93.8% | 92.7% |
+| Qwen2.5-3B | none | 38.5% [32-46] | 87.5% | 62.0% |
+| Qwen2.5-3B | sandwich | 16.1% [12-22] | 93.8% | 90.6% |
+| Qwen2.5-3B | classifier | 13.5% [9-19] | 87.5% | 83.9% |
+| Qwen2.5-3B | tool_guard | 10.4% [7-16] | 87.5% | 53.1% |
+| Qwen2.5-3B | layered | **0.0% [0-2]** | 93.8% | 97.9% |
+| Llama 3.2 3B | none | 60.9% [54-68] | 43.8% | 14.6% |
+| Llama 3.2 3B | layered | **0.0% [0-2]** | 37.5% | 33.9% |
+
+![tradeoff](results/tradeoff.png)
+
+**What the numbers say**
+
+* **The bigger model was easier to hijack.** Qwen2.5-7B followed injected instructions more often than
+  Qwen2.5-3B (48.4% vs 38.5%), because it follows instructions better in general, including the attacker's.
+  `multilingual` injections succeeded 93.8% of the time on the 7B model and 37.5% on the 3B model.
+* **No single defense is enough, but a layered one is.** The tool-call guard stopped every attack that needed a
+  side-effecting tool (0.0% on payments, deletes and exfiltration), but it cannot see text-only attacks: the
+  phishing goal still succeeded 41.7% of the time. Classifier + sandwich + guard brought attack success to
+  0.0-0.5% on all three models. Benign utility did not drop on either Qwen model and dropped by one task (7 to 6 of 16) on Llama.
+* **Filtering by line has a gap.** The classifier catches 100% of whole `fake_completion` strings, but in the
+  agent run that family still succeeded 68.8% of the time. The filter scores one line at a time, and the line
+  that carries the payload ("User: Thanks! Next, please...") does not look like an attack on its own.
+* **LLM self-check is expensive.** Asking the model whether a tool result contains instructions caught 75-100% of
+  each family offline, but it flagged 15.4% of benign content. In the agent, utility under attack fell to 22.4%,
+  and each episode used 1.8 times as many LLM calls (5.31 vs 2.99).
+* **Static benchmarks overstate robustness.** Against the sandwich and classifier defenses, the adaptive attacker
+  had 0% success on its first attempt, which is the static template. After five rewrites it reached 25.0%
+  [10-49] on 16 task and goal pairs.
+* **The detector generalizes, with blind spots.** It was trained only on public data (BIPIA, Tensor Trust). On
+  this repo's unseen families it caught 9 of 12, with a 3.8% false-positive rate on benign workspace text.
+  It missed `naive`, `urgency` and `multilingual` entirely.
 
 ## Why this matters
 

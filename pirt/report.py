@@ -48,11 +48,14 @@ def _chart_tradeoff(summary: dict, path: Path) -> None:
     models = list(summary)
     fig, axes = plt.subplots(1, len(models), figsize=(5.2 * len(models), 4.6), squeeze=False, sharey=True)
     for ax, m in zip(axes[0], models, strict=True):
+        placed: list[tuple[float, float]] = []
         for d, s in summary[m].items():
             x, y = 100 * s["asr"]["p"], 100 * s["benign_utility"]["p"]
             ax.errorbar(x, y, xerr=[[x - 100 * s["asr"]["lo"]], [100 * s["asr"]["hi"] - x]], fmt="o", ms=6,
                         color="#c0392b" if d == "none" else "#2c3e50", ecolor="#bbbbbb", capsize=2)
-            ax.annotate(d, (x, y), textcoords="offset points", xytext=(6, 4), fontsize=8)
+            crowded = any(abs(x - px) < 12 and abs(y - py) < 3 for px, py in placed)
+            ax.annotate(d, (x, y), textcoords="offset points", xytext=(6, -12 if crowded else 4), fontsize=8)
+            placed.append((x, y))
         ax.set_title(m, fontsize=10)
         ax.set_xlabel("Attack success rate (%)  [lower is better]")
         ax.set_xlim(-3, 103)
